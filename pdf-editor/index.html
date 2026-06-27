@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="PDF Tools by Formatly — Merge, split, compress, lock and convert PDFs entirely on your device."/>
+  <title>PDF Tools — Formatly</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg0: #0F172A;
+      --bg1: #1E293B;
+      --bg2: #334155;
+      --accent-indigo: #6366F1;
+      --accent-violet: #8B5CF6;
+      --accent-emerald: #10B981;
+      --accent-rose: #F43F5E;
+      --accent-cyan: #06B6D4;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-dim: #64748B;
+      --border: #334155;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg0);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: 0.7;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(24px) saturate(150%);
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      padding: 0 40px; height: 72px;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .nav-logo {
+      font-size: 22px; font-weight: 900; letter-spacing: -0.8px;
+      color: var(--text-primary); text-decoration: none;
+      display: flex; align-items: center; gap: 2px;
+    }
+    .nav-logo span { color: var(--accent-indigo); }
+    .nav-links { display: flex; gap: 24px; list-style: none; align-items: center; }
+    .nav-links a {
+      font-size: 14px; font-weight: 500;
+      color: var(--text-secondary); text-decoration: none;
+      transition: color 0.2s; position: relative;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -6px; left: 0; right: 0;
+      height: 2px; background: var(--accent-rose); border-radius: 2px;
+      transform: scaleX(0); transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .nav-links a:hover { color: var(--text-primary); }
+    .nav-links a:hover::after { transform: scaleX(1); }
+    .nav-cta {
+      background: var(--text-primary); color: var(--bg0);
+      padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 700;
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .nav-cta:hover {
+      background: var(--accent-rose); color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(244, 63, 94, 0.4);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 120px 24px 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute; top: -150px; left: 50%;
+      transform: translateX(-50%);
+      width: 1000px; height: 800px;
+      background: radial-gradient(ellipse, rgba(244, 63, 94, 0.14) 0%, transparent 60%);
+      pointer-events: none; animation: pulse-glow 8s ease-in-out infinite;
+    }
+    .hero-glow2 {
+      position: absolute; top: 200px; left: 20%;
+      width: 600px; height: 600px;
+      background: radial-gradient(ellipse, rgba(244, 63, 94, 0.07) 0%, transparent 60%);
+      pointer-events: none; animation: pulse-glow 10s ease-in-out infinite reverse;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+    }
+    .hero-dot-grid {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent);
+      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent);
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 1; }
+
+    /* App icon — keeps the rose/amber gradient from the main page card, correct */
+    .hero-app-icon {
+      width: 96px; height: 96px; border-radius: 26px;
+      background: linear-gradient(135deg, #F43F5E, #F59E0B);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 44px; margin: 0 auto 32px;
+      box-shadow: 0 20px 48px rgba(244, 63, 94, 0.3), 0 8px 16px rgba(0,0,0,0.3);
+      animation: fade-up 0.6s ease both;
+      position: relative;
+    }
+    .hero-app-icon::after {
+      content: '';
+      position: absolute; inset: -2px; border-radius: 28px;
+      background: linear-gradient(135deg, rgba(244,63,94,0.4), rgba(245,158,11,0.3));
+      z-index: -1; filter: blur(14px);
+    }
+
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 100px; padding: 8px 18px;
+      font-size: 12px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--accent-rose);
+      margin-bottom: 32px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      animation: fade-up 0.6s 0.05s ease both;
+    }
+    .hero-eyebrow::before {
+      content: ''; width: 6px; height: 6px;
+      background: var(--accent-rose); border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-rose);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .hero h1 {
+      font-size: clamp(48px, 9vw, 88px);
+      font-weight: 900; line-height: 1.05;
+      letter-spacing: -3.5px; margin-bottom: 24px;
+      color: var(--text-primary);
+      animation: fade-up 0.6s 0.15s ease both;
+    }
+    .hero h1 .line2 { display: block; }
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--accent-rose), var(--accent-violet));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-secondary); max-width: 540px;
+      line-height: 1.7; margin: 0 auto 48px;
+      animation: fade-up 0.6s 0.25s ease both;
+    }
+    .hero-cta {
+      display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+      animation: fade-up 0.6s 0.35s ease both;
+    }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      border: 1px solid var(--border); border-radius: 20px;
+      background: var(--bg1); max-width: 720px; margin: 56px auto 0;
+      overflow: hidden; position: relative; z-index: 1;
+      animation: fade-up 0.6s 0.5s ease both;
+    }
+    .stat-item {
+      flex: 1; min-width: 140px; padding: 28px 20px; text-align: center;
+      border-right: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-item:hover { background: var(--bg2); }
+    .stat-number {
+      font-size: 30px; font-weight: 900; letter-spacing: -1.5px;
+      color: var(--accent-rose); margin-bottom: 4px;
+    }
+    .stat-label { font-size: 13px; font-weight: 500; color: var(--text-dim); }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent-rose); color: white; text-decoration: none;
+      padding: 16px 32px; border-radius: 12px;
+      font-size: 15px; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(244, 63, 94, 0.25);
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .btn-primary:hover {
+      background: #E11D48; transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(244, 63, 94, 0.4);
+    }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(8px);
+      color: var(--text-primary); text-decoration: none;
+      padding: 16px 32px; border-radius: 12px;
+      font-size: 15px; font-weight: 600;
+      border: 1px solid var(--border);
+      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+    }
+    .btn-secondary:hover {
+      background: rgba(51, 65, 85, 0.8); border-color: var(--text-dim);
+      transform: translateY(-2px);
+    }
+
+    /* ── SCROLL INDICATOR ── */
+    .scroll-indicator {
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      animation: fade-up 0.6s 0.8s ease both;
+    }
+    .scroll-indicator span { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+    .scroll-line {
+      width: 2px; height: 48px; border-radius: 2px;
+      background: linear-gradient(to bottom, var(--text-dim), transparent);
+      animation: scroll-line 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes scroll-line {
+      0%    { transform-origin: top; transform: scaleY(0); opacity: 0; }
+      50%   { transform-origin: top; transform: scaleY(1); opacity: 1; }
+      50.1% { transform-origin: bottom; transform: scaleY(1); opacity: 1; }
+      100%  { transform-origin: bottom; transform: scaleY(0); opacity: 0; }
+    }
+
+    /* ── SECTION BASE ── */
+    .section { padding: 120px 24px; max-width: 1040px; margin: 0 auto; position: relative; }
+    .section-label {
+      font-size: 12px; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--accent-rose); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .section-label::before { content: ''; width: 32px; height: 2px; background: var(--accent-rose); border-radius: 2px; }
+    .section-title {
+      font-size: clamp(32px, 5vw, 56px); font-weight: 900;
+      letter-spacing: -2px; line-height: 1.1; margin-bottom: 20px;
+    }
+    .section-subtitle { font-size: 18px; color: var(--text-secondary); line-height: 1.7; max-width: 580px; margin-bottom: 64px; }
+
+    /* ── FEATURES GRID ── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 2px; background: var(--border);
+      border-radius: 24px; overflow: hidden; border: 1px solid var(--border);
+    }
+    .feature-cell {
+      background: var(--bg1); padding: 36px 32px;
+      transition: background 0.25s; position: relative;
+      opacity: 0; transform: translateY(32px);
+      transition: background 0.25s, opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+    }
+    .feature-cell.visible { opacity: 1; transform: translateY(0); }
+    .feature-cell:hover { background: #243044; }
+    .feature-cell::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 0;
+      transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .feature-cell:hover::before { height: 56px; }
+    .fc-rose::before   { background: var(--accent-rose); }
+    .fc-violet::before { background: var(--accent-violet); }
+    .fc-indigo::before { background: var(--accent-indigo); }
+    .fc-cyan::before   { background: var(--accent-cyan); }
+    .fc-emerald::before { background: var(--accent-emerald); }
+    .fc-dim::before    { background: var(--text-dim); }
+
+    .feature-icon { font-size: 32px; margin-bottom: 16px; display: block; }
+    .feature-title { font-size: 16px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 10px; }
+    .feature-desc  { font-size: 14px; color: var(--text-secondary); line-height: 1.65; }
+
+    /* ── HOW IT WORKS ── */
+    .steps-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; position: relative;
+    }
+    .steps-row::before {
+      content: ''; position: absolute; top: 28px;
+      left: calc(16.6% + 16px); right: calc(16.6% + 16px); height: 1px;
+      background: linear-gradient(90deg, var(--accent-rose), var(--accent-violet));
+      opacity: 0.25;
+    }
+    .step-card {
+      background: var(--bg1); border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px 28px; text-align: center;
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    }
+    .step-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      border-color: rgba(244,63,94,0.25);
+    }
+    .step-number {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: var(--accent-rose);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 900; color: white;
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 20px rgba(244,63,94,0.25);
+    }
+    .step-title { font-size: 16px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.3px; }
+    .step-desc  { font-size: 14px; color: var(--text-secondary); line-height: 1.65; }
+
+    /* ── PRIVACY SECTION ── */
+    .privacy-strip {
+      background: linear-gradient(135deg, rgba(244,63,94,0.04), rgba(139,92,246,0.04));
+      border: 1px solid rgba(244,63,94,0.12);
+      border-radius: 24px; padding: 56px 48px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+    }
+    .privacy-text h3 {
+      font-size: clamp(24px, 3.5vw, 36px); font-weight: 900;
+      letter-spacing: -1.2px; margin-bottom: 16px; line-height: 1.2;
+    }
+    .privacy-text p { font-size: 16px; color: var(--text-secondary); line-height: 1.7; }
+    .privacy-checks { display: flex; flex-direction: column; gap: 14px; }
+    .privacy-check {
+      display: flex; align-items: flex-start; gap: 14px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(244, 63, 94, 0.1);
+      border-radius: 14px; padding: 16px 20px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .privacy-check:hover {
+      border-color: rgba(244,63,94,0.3);
+      background: rgba(244,63,94,0.04);
+    }
+    .check-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(244,63,94,0.1);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 13px;
+    }
+    .check-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+    .check-desc  { font-size: 13px; color: var(--text-secondary); }
+
+    /* ── DIVIDER ── */
+    .divider { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); max-width: 1040px; margin: 0 auto; }
+
+    /* ── CONTACT ── */
+    .contact-box {
+      background: linear-gradient(135deg, var(--bg1), #2D1218);
+      border: 1px solid var(--border); border-radius: 32px;
+      padding: 80px 48px; text-align: center; position: relative; overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    .contact-glow {
+      position: absolute; top: -150px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 500px;
+      background: radial-gradient(ellipse, rgba(244,63,94,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .contact-box h2 { font-size: clamp(32px,5vw,48px); font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; position: relative; }
+    .contact-box p  { font-size: 18px; color: var(--text-secondary); margin-bottom: 48px; line-height: 1.7; position: relative; }
+    .contact-links  { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; position: relative; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid rgba(51,65,85,0.5); padding: 48px 40px;
+      max-width: 1040px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px;
+    }
+    .footer-logo { font-size: 20px; font-weight: 900; color: var(--text-primary); text-decoration: none; letter-spacing: -0.8px; }
+    .footer-logo span { color: var(--accent-indigo); }
+    .footer-links { display: flex; gap: 32px; list-style: none; }
+    .footer-links a { font-size: 14px; font-weight: 500; color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--text-primary); }
+    .footer-copy { font-size: 14px; font-weight: 500; color: var(--text-dim); }
+
+    /* ── EDIT PDF BOX ── */
+    .edit-pdf-box {
+      margin-top: 32px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(99,102,241,0.06));
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: 24px; padding: 48px;
+      position: relative; overflow: hidden;
+    }
+    .edit-pdf-box::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      background: radial-gradient(ellipse, rgba(139,92,246,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .edit-pdf-header { margin-bottom: 40px; }
+    .edit-pdf-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25);
+      color: var(--accent-violet); border-radius: 100px;
+      padding: 5px 14px; font-size: 11px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .edit-pdf-title {
+      font-size: clamp(20px, 3vw, 28px); font-weight: 900;
+      letter-spacing: -0.8px; margin-bottom: 8px; color: var(--text-primary);
+    }
+    .edit-pdf-sub { font-size: 15px; color: var(--text-secondary); line-height: 1.6; }
+
+    .annotation-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    }
+    .annotation-item {
+      background: rgba(15,23,42,0.6); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px;
+      display: flex; align-items: flex-start; gap: 14px;
+      transition: border-color 0.2s, background 0.2s, transform 0.25s, opacity 0.5s cubic-bezier(0.16,1,0.3,1);
+      opacity: 0; transform: translateY(20px);
+    }
+    .annotation-item.visible { opacity: 1; transform: translateY(0); }
+    .annotation-item.visible:hover {
+      border-color: rgba(139,92,246,0.35);
+      background: rgba(139,92,246,0.06);
+      transform: translateX(4px);
+    }
+    .ann-icon {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 900;
+    }
+    .ann-rose    { background: rgba(244,63,94,0.12);  color: var(--accent-rose); }
+    .ann-violet  { background: rgba(139,92,246,0.12); color: var(--accent-violet); }
+    .ann-indigo  { background: rgba(99,102,241,0.12); color: var(--accent-indigo); }
+    .ann-cyan    { background: rgba(6,182,212,0.12);  color: var(--accent-cyan); }
+    .ann-emerald { background: rgba(16,185,129,0.12); color: var(--accent-emerald); }
+
+    .ann-label { font-size: 14px; font-weight: 700; margin-bottom: 3px; color: var(--text-primary); }
+    .ann-desc  { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 0 24px; height: 64px; }
+      .nav-links li:not(:last-child) { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .annotation-grid { grid-template-columns: 1fr 1fr; }
+      .edit-pdf-box { padding: 32px 24px; }
+      .privacy-strip { grid-template-columns: 1fr; padding: 36px 24px; }
+      .steps-row { grid-template-columns: 1fr; }
+      .steps-row::before { display: none; }
+      .contact-box { padding: 48px 24px; border-radius: 24px; }
+      footer { padding: 40px 24px; flex-direction: column; align-items: flex-start; }
+      .hero { padding: 120px 24px 80px; }
+      .section { padding: 80px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="../index.html" class="nav-logo">Formatly<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="../index.html#apps">All Apps</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="mailto:formatly@hotmail.com" class="nav-cta">Get in touch</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-dot-grid"></div>
+  <div class="hero-content">
+    <div class="hero-app-icon">📄</div>
+    <div class="hero-eyebrow">PDF Tools by Formatly</div>
+    <h1>
+      Every PDF task,
+      <span class="line2"><span class="gradient-text">done on-device</span></span>
+    </h1>
+    <p>Merge, split, compress, lock, edit, and convert PDFs without ever sending a single file to a server. Your documents stay yours — always.</p>
+    <div class="hero-cta">
+      <a href="#" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5v-17c0-.83.94-1.3 1.6-.8l14 8.5c.6.36.6 1.24 0 1.6l-14 8.5c-.66.5-1.6.03-1.6-.8z"/></svg>
+        Download on Google Play
+      </a>
+      <a href="#features" class="btn-secondary">See all features →</a>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-number">10</div>
+        <div class="stat-label">PDF tools</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">0</div>
+        <div class="stat-label">Files uploaded</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">On-device</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">Free</div>
+        <div class="stat-label">To try</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label reveal">What it does</div>
+  <h2 class="section-title reveal reveal-delay-1">Ten tools, one app</h2>
+  <p class="section-subtitle reveal reveal-delay-2">Every common PDF operation in a single install. No account required. No internet needed. Just open and go.</p>
+  <div class="features-grid">
+    <div class="feature-cell fc-rose" data-delay="0">
+      <span class="feature-icon">🔗</span>
+      <div class="feature-title">Merge PDFs</div>
+      <p class="feature-desc">Combine any number of PDFs into one file. Reorder pages before merging with a simple drag.</p>
+    </div>
+    <div class="feature-cell fc-violet" data-delay="100">
+      <span class="feature-icon">✂️</span>
+      <div class="feature-title">Split PDF</div>
+      <p class="feature-desc">Extract specific pages or ranges into separate files. Pick exactly what you need, leave the rest.</p>
+    </div>
+    <div class="feature-cell fc-indigo" data-delay="200">
+      <span class="feature-icon">📦</span>
+      <div class="feature-title">Compress PDF</div>
+      <p class="feature-desc">Shrink file sizes dramatically without visible quality loss — ideal for email and sharing.</p>
+    </div>
+    <div class="feature-cell fc-cyan" data-delay="300">
+      <span class="feature-icon">🔒</span>
+      <div class="feature-title">Lock & Unlock</div>
+      <p class="feature-desc">Password-protect sensitive documents or remove existing passwords from files you own.</p>
+    </div>
+    <div class="feature-cell fc-emerald" data-delay="400">
+      <span class="feature-icon">🖼️</span>
+      <div class="feature-title">Images → PDF</div>
+      <p class="feature-desc">Turn JPG, PNG, or WEBP photos into a clean PDF instantly. Great for scanning paper documents.</p>
+    </div>
+    <div class="feature-cell fc-dim" data-delay="500">
+      <span class="feature-icon">💧</span>
+      <div class="feature-title">Watermark</div>
+      <p class="feature-desc">Add text or image watermarks to any PDF. Control opacity, position, size, and rotation.</p>
+    </div>
+    <div class="feature-cell fc-rose" data-delay="600">
+      <span class="feature-icon">🗜️</span>
+      <div class="feature-title">PDF → JPG</div>
+      <p class="feature-desc">Export any PDF page as a high-quality JPG or PNG image. Pick individual pages or export the full document at once.</p>
+    </div>
+    <div class="feature-cell fc-violet" data-delay="700">
+      <span class="feature-icon">✏️</span>
+      <div class="feature-title">Edit PDF</div>
+      <p class="feature-desc">A full annotation toolkit built into the app. Fill forms, sign, highlight, redact, stamp, draw, and more — all without leaving the app.</p>
+    </div>
+    <div class="feature-cell fc-indigo" data-delay="800">
+      <span class="feature-icon">🔢</span>
+      <div class="feature-title">Page Numbers</div>
+      <p class="feature-desc">Add customisable page numbers to any PDF. Control position, format, font, size, and starting number.</p>
+    </div>
+  </div>
+
+  <!-- EDIT PDF ANNOTATION TOOLS -->
+  <div class="edit-pdf-box reveal reveal-delay-2">
+    <div class="edit-pdf-header">
+      <span class="edit-pdf-badge">Inside Edit PDF</span>
+      <h3 class="edit-pdf-title">Everything you need to annotate a document</h3>
+      <p class="edit-pdf-sub">Nine professional-grade annotation tools, all running on-device with zero uploads.</p>
+    </div>
+    <div class="annotation-grid">
+      <div class="annotation-item" data-anim-delay="0">
+        <div class="ann-icon ann-rose">📝</div>
+        <div class="ann-label">Fill Forms</div>
+        <div class="ann-desc">Type into any fillable PDF field directly</div>
+      </div>
+      <div class="annotation-item" data-anim-delay="60">
+        <div class="ann-icon ann-violet">✍️</div>
+        <div class="ann-label">Signature</div>
+        <div class="ann-desc">Draw, type, or import your signature</div>
+      </div>
+      <div class="annotation-item" data-anim-delay="120">
+        <div class="ann-icon ann-indigo">T</div>
+        <div class="ann-label">Add Text</div>
+        <div class="ann-desc">Place free text anywhere on the page</div>
+      </div>
+      <div class="annotation-item" data-anim-delay="180">
+        <div class="ann-icon ann-cyan">🖊️</div>
+        <div class="ann-label">Highlight</div>
+        <div class="ann-desc">Mark passages in any colour</div>
+      </div>
+      <div class="annotation-item" data-anim-delay="240">
+        <div class="ann-icon ann-rose">⬛</div>
+        <div class="ann-label">Redact</div>
+        <div class="ann-desc">Permanently black out sensitive content</div>
+      </div>
+      <div class="annotation-item" data-anim-delay="300">
+        <div class="ann-icon ann-emerald">🔖</div>
+        <div class="ann-label">Stamps</div>
+        <div class="ann-desc">Apply Approved, Draft, Confidential and more</div>
+      </div>
+      <div class="annotation-item" data-anim-delay="360">
+        <div class="ann-icon ann-violet">⬆️</div>
+        <div class="ann-label">Header & Footer</div>
+        <div class="ann-desc">Add consistent text across every page</div>
+      </div>
+      <div class="annotation-item" data-anim-delay="420">
+        <div class="ann-icon ann-indigo">◼</div>
+        <div class="ann-label">Draw Shapes</div>
+        <div class="ann-desc">Rectangles, circles, lines, and arrows</div>
+      </div>
+      <div class="annotation-item" data-anim-delay="480">
+        <div class="ann-icon ann-cyan">🖼️</div>
+        <div class="ann-label">Add Image</div>
+        <div class="ann-desc">Insert a photo or logo onto any page</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="section-label reveal">Simple by design</div>
+  <h2 class="section-title reveal reveal-delay-1">Three taps, done</h2>
+  <p class="section-subtitle reveal reveal-delay-2">No tutorial needed. The same workflow applies to every single tool.</p>
+  <div class="steps-row">
+    <div class="step-card reveal reveal-delay-1">
+      <div class="step-number">1</div>
+      <div class="step-title">Pick your tool</div>
+      <p class="step-desc">Open the app and tap the operation you need — Merge, Split, Compress, Lock, or any other.</p>
+    </div>
+    <div class="step-card reveal reveal-delay-2">
+      <div class="step-number">2</div>
+      <div class="step-title">Select your files</div>
+      <p class="step-desc">Import from your device or Files app, or share directly from any other app using the system share sheet.</p>
+    </div>
+    <div class="step-card reveal reveal-delay-3">
+      <div class="step-number">3</div>
+      <div class="step-title">Export and go</div>
+      <p class="step-desc">Save to your device, open in another app, or share directly. Your output, exactly where you need it.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRIVACY -->
+<section class="section">
+  <div class="section-label reveal">Built different</div>
+  <h2 class="section-title reveal reveal-delay-1">Privacy isn't a feature.<br>It's the foundation.</h2>
+  <p class="section-subtitle reveal reveal-delay-2">Most PDF apps send your files to their servers. We built ours so they never can.</p>
+  <div class="privacy-strip reveal reveal-delay-3">
+    <div class="privacy-text">
+      <h3>Your files never leave your phone.</h3>
+      <p>PDF Tools was built without a backend on purpose. There are no servers processing your documents, no accounts storing your history, and no telemetry watching what you do. Every operation runs natively on your device — even without a network connection.</p>
+    </div>
+    <div class="privacy-checks">
+      <div class="privacy-check">
+        <div class="check-icon">🚫</div>
+        <div>
+          <div class="check-title">No internet required</div>
+          <div class="check-desc">Works fully offline. No Wi-Fi, no data, no problem.</div>
+        </div>
+      </div>
+      <div class="privacy-check">
+        <div class="check-icon">🔐</div>
+        <div>
+          <div class="check-title">No server uploads</div>
+          <div class="check-desc">Files are processed locally. Nothing is ever transmitted.</div>
+        </div>
+      </div>
+      <div class="privacy-check">
+        <div class="check-icon">🙈</div>
+        <div>
+          <div class="check-title">No accounts, no tracking</div>
+          <div class="check-desc">No sign-up. No analytics. No ad identifiers. Zero.</div>
+        </div>
+      </div>
+      <div class="privacy-check">
+        <div class="check-icon">🗑️</div>
+        <div>
+          <div class="check-title">No history stored</div>
+          <div class="check-desc">We don't log what you open, edit, or export. Ever.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CONTACT -->
+<section class="section" id="contact" style="padding-bottom: 120px;">
+  <div class="contact-box reveal">
+    <div class="contact-glow"></div>
+    <h2>Questions or feedback?</h2>
+    <p>Found a bug, have a feature request, or just want to say hello?<br>We read every message and reply to all of them.</p>
+    <div class="contact-links">
+      <a href="mailto:formatly@hotmail.com" class="btn-primary">✉️ Email the team</a>
+      <a href="../index.html" class="btn-secondary">← Back to Formatly</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="../index.html" class="footer-logo">Formatly<span>.</span></a>
+  <ul class="footer-links">
+    <li><a href="../index.html#apps">All Apps</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="privacy-policy.html">Privacy Policy</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 Formatly Studio. All rights reserved.</div>
+</footer>
+
+<script>
+  // Scroll-reveal for .reveal elements
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  // Staggered reveal for feature grid cells
+  const cellObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const delay = parseInt(e.target.dataset.delay || 0);
+        setTimeout(() => e.target.classList.add('visible'), delay);
+        cellObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.feature-cell').forEach(el => cellObserver.observe(el));
+
+  // Staggered reveal for annotation items
+  const annObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const delay = parseInt(e.target.dataset.animDelay || 0);
+        setTimeout(() => e.target.classList.add('visible'), delay);
+        annObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
+  document.querySelectorAll('.annotation-item').forEach(el => annObserver.observe(el));
+
+  // Nav background on scroll
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 40) {
+      nav.style.background = 'rgba(15, 23, 42, 0.95)';
+      nav.style.boxShadow = '0 4px 24px rgba(0, 0, 0, 0.3)';
+    } else {
+      nav.style.background = 'rgba(15, 23, 42, 0.6)';
+      nav.style.boxShadow = 'none';
+    }
+  });
+</script>
+
+</body>
+</html>
