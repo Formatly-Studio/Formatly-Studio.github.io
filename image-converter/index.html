@@ -146,7 +146,7 @@
     .fg-tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.22); color: var(--text-secondary); transition: color 0.2s, background 0.2s; }
     .format-group:hover .fg-tag { color: var(--text-primary); background: rgba(139,92,246,0.2); }
 
-    /* ── APP SHOWCASE (horizontal slider) ── */
+    /* ── APP SHOWCASE (single-slide looping carousel) ── */
     .showcase-outer {
       padding: 120px 0;
       position: relative;
@@ -159,54 +159,45 @@
     }
     .showcase-track-wrap {
       width: 100%;
-      overflow: hidden;
-      cursor: grab;
-      -webkit-user-select: none;
-      user-select: none;
-      position: relative;
-    }
-    .showcase-track-wrap:active { cursor: grabbing; }
-    .showcase-track {
       display: flex;
-      align-items: flex-end;
-      gap: 18px;
-      padding: 20px 0 32px;
-      will-change: transform;
-      transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
-      width: max-content;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .showcase-track {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .sc-slide {
-      flex-shrink: 0;
-      border-radius: 22px;
+      position: absolute;
+      border-radius: 28px;
       overflow: hidden;
-      cursor: pointer;
-      transition:
-        transform 0.45s cubic-bezier(0.16,1,0.3,1),
-        box-shadow 0.45s,
-        opacity 0.45s;
-    }
-    .sc-slide img { display: block; pointer-events: none; }
-    .sc-slide.sc-active {
-      transform: scale(1) translateY(0px);
       box-shadow:
         0 0 0 2px var(--accent-blue),
-        0 28px 72px rgba(37,99,235,0.22),
-        0 12px 32px rgba(0,0,0,0.5);
+        0 32px 80px rgba(37,99,235,0.22),
+        0 16px 40px rgba(0,0,0,0.55);
+      opacity: 0;
+      transform: translateX(60px) scale(0.92);
+      transition:
+        opacity 0.55s cubic-bezier(0.16,1,0.3,1),
+        transform 0.55s cubic-bezier(0.16,1,0.3,1);
+      pointer-events: none;
+    }
+    .sc-slide.sc-active {
       opacity: 1;
-      z-index: 3;
+      transform: translateX(0) scale(1);
+      pointer-events: auto;
+      position: relative;
     }
-    .sc-slide.sc-near {
-      transform: scale(0.91) translateY(14px);
-      box-shadow: 0 14px 40px rgba(0,0,0,0.4);
-      opacity: 0.6;
-      z-index: 2;
+    .sc-slide.sc-exit-left {
+      opacity: 0;
+      transform: translateX(-60px) scale(0.92);
     }
-    .sc-slide.sc-far {
-      transform: scale(0.82) translateY(26px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-      opacity: 0.28;
-      z-index: 1;
-    }
+    .sc-slide img { display: block; pointer-events: none; }
     .sc-dots {
       display: flex; gap: 8px; justify-content: center;
       margin-top: 36px;
@@ -231,7 +222,7 @@
     .sc-progress-fill {
       height: 100%; border-radius: 2px;
       background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
-      transition: width 0.5s cubic-bezier(0.16,1,0.3,1);
+      transition: width 0.55s cubic-bezier(0.16,1,0.3,1);
     }
 
     /* ── HOW IT WORKS ── */
@@ -475,96 +466,137 @@
   }, { threshold: 0.05, rootMargin: '0px 0px -20px 0px' });
   document.querySelectorAll('.format-group').forEach(el => fmtObs.observe(el));
 
-  /* ── APP SHOWCASE SLIDER ── */
+  /* ── /* ── APP SHOWCASE SLIDER ── */
   (function() {
     const IMGS = [
       '1.png','2.png','3.png','4.png','5.png','6.png','7.png'
     ];
     const TOTAL = IMGS.length;
-    const W = 200;
+    const W = 300;
     const H = Math.round(W * 1365 / 768);
-    const GAP = 18;
     let cur = 0;
-    let dragging = false, startX = 0, startOff = 0, liveOff = 0;
+    let timer = null;
+    let isAnimating = false;
 
     const track  = document.getElementById('sc-track');
     const dotsEl = document.getElementById('sc-dots');
     const fill   = document.getElementById('sc-fill');
     const outer  = document.getElementById('sc-outer');
 
+    // Set track size to match slide
+    track.style.width  = W + 'px';
+    track.style.height = H + 'px';
+
+    // Build all slides and dots
     IMGS.forEach((src, i) => {
       const slide = document.createElement('div');
-      slide.className = 'sc-slide';
-      slide.style.cssText = `width:${W}px;height:${H}px;`;
-      slide.innerHTML = `<img src="${src}" width="${W}" height="${H}" loading="${i < 3 ? 'eager' : 'lazy'}" style="width:${W}px;height:${H}px;object-fit:cover;display:block;" />`;
-      slide.addEventListener('click', () => goTo(i));
+      slide.className = 'sc-slide' + (i === 0 ? ' sc-active' : '');
+      slide.innerHTML = '<img src="' + src + '" width="' + W + '" height="' + H + '" loading="' + (i < 2 ? 'eager' : 'lazy') + '" style="width:' + W + 'px;height:' + H + 'px;object-fit:cover;display:block;" />';
       track.appendChild(slide);
 
       const dot = document.createElement('div');
-      dot.className = 'sc-dot';
+      dot.className = 'sc-dot' + (i === 0 ? ' active' : '');
       dot.addEventListener('click', () => goTo(i));
       dotsEl.appendChild(dot);
     });
 
-    const slides = [...track.querySelectorAll('.sc-slide')];
-    const dots   = [...dotsEl.querySelectorAll('.sc-dot')];
+    const slides = Array.from(track.querySelectorAll('.sc-slide'));
+    const dots   = Array.from(dotsEl.querySelectorAll('.sc-dot'));
 
-    function centreOffset(idx) {
-      const vw = outer.offsetWidth;
-      // centre the active slide in the visible area
-      return (vw / 2) - (idx * (W + GAP)) - (W / 2);
-    }
-
-    function render(animate) {
-      liveOff = centreOffset(cur);
-      track.style.transition = animate === false ? 'none' : 'transform 0.5s cubic-bezier(0.16,1,0.3,1)';
-      track.style.transform  = `translateX(${liveOff}px)`;
-
-      slides.forEach((s, i) => {
-        const d = Math.abs(i - cur);
-        s.classList.remove('sc-active', 'sc-near', 'sc-far');
-        s.classList.add(d === 0 ? 'sc-active' : d === 1 ? 'sc-near' : 'sc-far');
-      });
-
+    function updateDots() {
       dots.forEach((d, i) => d.classList.toggle('active', i === cur));
-      fill.style.width = `${((cur + 1) / TOTAL) * 100}%`;
+      fill.style.width = ((cur + 1) / TOTAL * 100) + '%';
     }
 
-    function goTo(i) { cur = Math.max(0, Math.min(TOTAL-1, i)); render(); }
+    function goTo(next, dir) {
+      if (isAnimating || next === cur) return;
+      isAnimating = true;
+      resetTimer();
 
+      const prev = cur;
+      cur = (next + TOTAL) % TOTAL;
+      const goRight = dir !== 'left';
+
+      const prevSlide = slides[prev];
+      const nextSlide = slides[cur];
+
+      // Set incoming slide starting position (off-screen right or left)
+      nextSlide.style.transition = 'none';
+      nextSlide.style.opacity = '0';
+      nextSlide.style.transform = 'translateX(' + (goRight ? 60 : -60) + 'px) scale(0.94)';
+      nextSlide.classList.remove('sc-exit-left');
+      nextSlide.style.position = 'absolute';
+      nextSlide.style.top = '0';
+      nextSlide.style.left = '0';
+
+      // Force reflow
+      nextSlide.offsetHeight;
+
+      // Animate both slides
+      nextSlide.style.transition = 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)';
+      nextSlide.style.opacity = '1';
+      nextSlide.style.transform = 'translateX(0) scale(1)';
+
+      prevSlide.style.transition = 'opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)';
+      prevSlide.style.opacity = '0';
+      prevSlide.style.transform = 'translateX(' + (goRight ? -60 : 60) + 'px) scale(0.94)';
+
+      updateDots();
+
+      setTimeout(() => {
+        // Settle: make next the static active, hide prev
+        prevSlide.classList.remove('sc-active');
+        prevSlide.style.position = 'absolute';
+        prevSlide.style.opacity = '0';
+        prevSlide.style.transform = '';
+        prevSlide.style.transition = '';
+
+        nextSlide.classList.add('sc-active');
+        nextSlide.style.position = 'relative';
+        nextSlide.style.opacity = '1';
+        nextSlide.style.transform = '';
+        nextSlide.style.transition = '';
+        nextSlide.style.top = '';
+        nextSlide.style.left = '';
+
+        isAnimating = false;
+      }, 520);
+    }
+
+    function next() { goTo((cur + 1) % TOTAL, 'right'); }
+    function prev() { goTo((cur - 1 + TOTAL) % TOTAL, 'left'); }
+
+    function startTimer() { timer = setInterval(next, 3000); }
+    function resetTimer() { clearInterval(timer); startTimer(); }
+
+    // Keyboard
     document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft')  goTo(cur - 1);
-      if (e.key === 'ArrowRight') goTo(cur + 1);
+      if (e.key === 'ArrowLeft')  prev();
+      if (e.key === 'ArrowRight') next();
     });
 
-    outer.addEventListener('mousedown', e => {
-      dragging = true; startX = e.clientX; startOff = liveOff;
-      track.style.transition = 'none'; e.preventDefault();
-    });
-    window.addEventListener('mousemove', e => {
-      if (!dragging) return;
-      track.style.transform = `translateX(${startOff + e.clientX - startX}px)`;
-    });
-    window.addEventListener('mouseup', e => {
-      if (!dragging) return; dragging = false;
+    // Swipe / drag
+    let startX = 0;
+    outer.addEventListener('mousedown', e => { startX = e.clientX; });
+    outer.addEventListener('mouseup',   e => {
       const dx = e.clientX - startX;
-      if (Math.abs(dx) > 50) goTo(cur + (dx < 0 ? 1 : -1));
-      else render();
+      if (Math.abs(dx) > 50) dx < 0 ? next() : prev();
     });
-
-    let tx = 0;
-    outer.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
+    outer.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
     outer.addEventListener('touchend',   e => {
-      const dx = e.changedTouches[0].clientX - tx;
-      if (Math.abs(dx) > 40) goTo(cur + (dx < 0 ? 1 : -1));
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 40) dx < 0 ? next() : prev();
     });
 
-    window.addEventListener('resize', () => render(false));
-    render(false);
+    // Pause on hover
+    outer.addEventListener('mouseenter', () => clearInterval(timer));
+    outer.addEventListener('mouseleave', startTimer);
+
+    updateDots();
+    startTimer();
   })();
 
-  /* ── NAV SCROLL ── */
-  const nav = document.querySelector('nav');
+  /* ── NAV SCROLL ── */ument.querySelector('nav');
   window.addEventListener('scroll', () => {
     if (window.scrollY > 40) {
       nav.style.background = 'rgba(15,23,42,0.95)';
